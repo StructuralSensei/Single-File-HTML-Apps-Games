@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stillwater</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%;font-family:Inter,system-ui,sans-serif;color:#eef2ff;background:#0e1424;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:-20%;z-index:-1;background:radial-gradient(circle at 20% 30%,#4f46e5 0,transparent 35%),radial-gradient(circle at 80% 20%,#0ea5a4 0,transparent 35%),radial-gradient(circle at 60% 85%,#f59e0b66 0,transparent 40%);filter:blur(60px);opacity:.6;animation:drift 30s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(4%,-3%) scale(1.05)}}
+.glass{background:rgba(255,255,255,.08);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);border:1px solid rgba(255,255,255,.16);border-radius:22px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+#app{max-width:1040px;margin:0 auto;padding:28px 20px 60px}
+header{margin-bottom:18px}
+h1{margin:0;font-size:34px;font-weight:300;letter-spacing:6px}
+header p{margin:6px 0 0;opacity:.65;font-size:14px}
+.bar{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;padding:16px 20px;margin-bottom:22px}
+.grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lbl{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;opacity:.6;margin-right:4px}
+.btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#eef2ff;padding:9px 14px;border-radius:12px;font:500 13px system-ui,sans-serif;cursor:pointer;transition:all .25s;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+.btn:hover{background:rgba(255,255,255,.2);transform:translateY(-1px)}
+.btn:active{transform:translateY(1px)}
+.btn.on{background:linear-gradient(135deg,#818cf8,#38bdf8);border-color:transparent;box-shadow:0 6px 20px #6366f155}
+.btn.sm{padding:6px 10px;font-size:12px}
+.master{display:flex;align-items:center;gap:10px;font-size:13px}
+.master input{width:160px}
+#tt{font-variant-numeric:tabular-nums;font-size:13px;min-width:70px;opacity:.85}
+input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;background:rgba(255,255,255,.18);outline:none;accent-color:#a5b4fc}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#c7d2fe);box-shadow:0 2px 8px #0008;cursor:pointer}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:#c7d2fe;cursor:pointer}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.card{padding:18px;transition:opacity .4s,transform .4s}
+.card:hover{transform:translateY(-2px)}
+.top{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.ic{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);flex-shrink:0}
+.nm{font-weight:600;font-size:15px}
+.ds{font-size:12px;opacity:.6;margin-top:2px}
+canvas{width:100%;height:56px;display:block;border-radius:12px;background:rgba(0,0,0,.22);margin-bottom:14px}
+.row{display:flex;align-items:center;gap:12px}
+.row input{flex:1}
+.mute.on{background:rgba(248,113,113,.25);border-color:rgba(248,113,113,.5)}
+#start{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:rgba(8,12,24,.6);backdrop-filter:blur(8px)}
+#start .box{padding:34px;text-align:center;max-width:360px}
+#start h2{margin:0 0 8px;font-weight:300;letter-spacing:4px}
+#start p{opacity:.7;font-size:14px;line-height:1.5}
+#start .btn{padding:12px 22px;font-size:15px;margin-top:10px}
+</style></head>
+<body>
+<div id="app">
+ <header><h1>STILLWATER</h1><p>Six synthesized soundscapes. Mix, layer, and drift off.</p></header>
+ <section class="glass bar">
+  <div class="grp"><span class="lbl">Mood</span>
+   <button class="btn" data-p="deep">Deep Work</button>
+   <button class="btn" data-p="night">Rainy Night</button>
+   <button class="btn" data-p="cabin">Cozy Cabin</button>
+  </div>
+  <label class="master"><span class="lbl" style="margin:0">Master</span><input id="mv" type="range" min="0" max="1" step="0.01" value="0.7"></label>
+  <div class="grp"><span class="lbl">Timer</span>
+   <button class="btn sm" data-t="15">15m</button>
+   <button class="btn sm" data-t="30">30m</button>
+   <button class="btn sm" data-t="60">60m</button>
+   <button class="btn sm" data-t="0">Off</button>
+   <span id="tt"></span>
+  </div>
+ </section>
+ <main id="grid"></main>
+</div>
+<div id="start"><div class="glass box"><h2>BEGIN</h2><p>Audio needs one tap to start. Use headphones to feel the 40Hz binaural channel.</p><button id="go" class="btn">Start listening</button></div></div>
+<script>
+const $=s=>document.querySelector(s);
+let ctx,master,NB={},masterVol=.7,fade=1,timerEnd=0,bins=new Uint8Array(32);
+const CHANNELS=[
+ {id:'rain',name:'Soft Rain',icon:'🌧️',desc:'Layered pink-noise drizzle',vol:.35,col:'#7dd3fc',build:buildRain},
+ {id:'thunder',name:'Deep Thunder',icon:'⛈️',desc:'Distant rolling rumbles',vol:0,col:'#a78bfa',build:buildThunder},
+ {id:'fire',name:'Crackling Fireplace',icon:'🔥',desc:'Warm base with random pops',vol:0,col:'#fb923c',build:buildFire},
+ {id:'wind',name:'Forest Wind',icon:'🌲',desc:'Swelling breeze through leaves',vol:0,col:'#86efac',build:buildWind},
+ {id:'murmur',name:'Coffee Shop Murmur',icon:'☕',desc:'Distant chatter and clinks',vol:0,col:'#fcd34d',build:buildMurmur},
+ {id:'binaural',name:'40Hz Focus Hum',icon:'🧠',desc:'200 / 240 Hz beat (headphones)',vol:0,col:'#f0abfc',build:buildBinaural}];
+const PRESETS={
+ deep:{rain:.3,murmur:.35,binaural:.5},
+ night:{rain:.7,thunder:.45,wind:.25},
+ cabin:{fire:.7,rain:.35,wind:.2,murmur:.3,thunder:.2}};
+
+/* ---------- Synthesis helpers ---------- */
+function makeBuf(type){
+ const n=ctx.sampleRate*4,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
+ let p0=0,p1=0,p2=0,br=0;
+ for(let i=0;i<n;i++){
+  const w=Math.random()*2-1;
+  if(type==='pink'){p0=.99765*p0+w*.099;p1=.963*p1+w*.2965;p2=.57*p2+w*1.0527;d[i]=(p0+p1+p2+w*.1848)*.25}
+  else if(type==='brown'){br=(br+.02*w)/1.02;d[i]=br*3.5}
+  else d[i]=w*.5;
+ }
+ return b;
+}
+const srcNode=type=>{const s=ctx.createBufferSource();s.buffer=NB[type];s.loop=true;return s};
+const flt=(type,f,q)=>{const x=ctx.createBiquadFilter();x.type=type;x.frequency.value=f;x.Q.value=q;return x};
+function lfo(rate,depth,param){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=rate;g.gain.value=depth;o.connect(g);g.connect(param);o.start()}
+function every(minMs,maxMs,fn){(function loop(){fn();setTimeout(loop,minMs+Math.random()*(maxMs-minMs))})()}
+
+/* ---------- Channel builders (each feeds node `o`) ---------- */
+function buildRain(o){
+ const a=srcNode('pink'),f=flt('bandpass',1400,.5),g=ctx.createGain();g.gain.value=.9;
+ a.connect(f).connect(g).connect(o);a.start();lfo(.13,.25,g.gain);
+ const s=srcNode('white'),h=flt('highpass',5000,.7),g2=ctx.createGain();g2.gain.value=.12;
+ s.connect(h).connect(g2).connect(o);s.start();lfo(.31,.06,g2.gain);
+}
+function buildThunder(o){
+ const a=srcNode('brown'),f=flt('lowpass',160,.7),g=ctx.createGain();g.gain.value=.2;
+ a.connect(f).connect(g).connect(o);a.start();
+ every(9000,22000,()=>{const t=ctx.currentTime;g.gain.cancelScheduledValues(t);g.gain.setTargetAtTime(.9,t,.5);g.gain.setTargetAtTime(.2,t+3,1.5)});
+}
+function buildFire(o){
+ const a=srcNode('pink'),f=flt('lowpass',600,.5),g=ctx.createGain();g.gain.value=.25;
+ a.connect(f).connect(g).connect(o);a.start();
+ const pop=()=>{
+  const t=ctx.currentTime,s=ctx.createBufferSource(),b=flt('bandpass',1200+Math.random()*4000,1.5),e=ctx.createGain(),d=.01+Math.random()*.05;
+  s.buffer=NB.white;e.gain.setValueAtTime(Math.random()*.9+.1,t);e.gain.exponentialRampToValueAtTime(.001,t+d);
+  s.connect(b).connect(e).connect(o);s.start(t,Math.random()*3.5,d+.02);s.stop(t+d+.03);
+ };
+ every(40,220,()=>{if(Math.random()<.7)pop();if(Math.random()<.12){pop();pop();pop()}});
+}
+function buildWind(o){
+ const a=srcNode('pink'),f=flt('bandpass',500,.7),g=ctx.createGain();g.gain.value=.5;
+ a.connect(f).connect(g).connect(o);a.start();lfo(.06,300,f.frequency);lfo(.08,.3,g.gain);
+}
+function buildMurmur(o){
+ const a=srcNode('pink'),f=flt('bandpass',900,.8),g=ctx.createGain();g.gain.value=.4;
+ a.connect(f).connect(g).connect(o);a.start();lfo(.2,200,f.frequency);
+ const a2=srcNode('pink'),f2=flt('bandpass',1800,1),v=ctx.createGain();v.gain.value=.3;
+ a2.connect(f2).connect(v).connect(o);a2.start();
+ every(600,1800,()=>v.gain.setTargetAtTime(Math.random()*.5,ctx.currentTime,.3));
+ every(4000,13000,()=>{const t=ctx.currentTime,s=ctx.createOscillator(),e=ctx.createGain();s.frequency.value=2200+Math.random()*2000;e.gain.setValueAtTime(.08,t);e.gain.exponentialRampToValueAtTime(.001,t+.25);s.connect(e).connect(o);s.start(t);s.stop(t+.3)});
+}
+function buildBinaural(o){
+ const L=ctx.createOscillator(),R=ctx.createOscillator(),gl=ctx.createGain(),gr=ctx.createGain(),pl=ctx.createStereoPanner(),pr=ctx.createStereoPanner();
+ L.frequency.value=200;R.frequency.value=240;gl.gain.value=gr.gain.value=.12;pl.pan.value=-1;pr.pan.value=1;
+ L.connect(gl).connect(pl).connect(o);R.connect(gr).connect(pr).connect(o);L.start();R.start();
+}
+
+/* ---------- Mixer state ---------- */
+function applyCh(c){if(ctx)c.g.gain.setTargetAtTime(c.muted?0:c.vol,ctx.currentTime,.05)}
+function applyMaster(){if(ctx)master.gain.setTargetAtTime(masterVol*fade,ctx.currentTime,.05)}
+function syncCard(c){
+ c.slider.value=c.vol;
+ c.mb.textContent=c.muted?'Unmute':'Mute';
+ c.mb.classList.toggle('on',c.muted);
+ c.cv.parentElement.style.opacity=c.muted?.55:1;
+}
+function applyPreset(k){
+ for(const c of CHANNELS){c.vol=PRESETS[k][c.id]||0;c.muted=false;syncCard(c);applyCh(c)}
+ document.querySelectorAll('[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===k));
+}
+function setTimer(min){
+ timerEnd=min?performance.now()+min*60000:0;
+ fade=1;applyMaster();
+ document.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',+b.dataset.t===min&&min>0));
+ if(!min)$('#tt').textContent='';
+}
+function tick(){
+ if(!timerEnd)return;
+ const r=(timerEnd-performance.now())/1000;
+ if(r<=0){fade=0;applyMaster();timerEnd=0;$('#tt').textContent='Sleep ✓';document.querySelectorAll('[data-t]').forEach(b=>b.classList.remove('on'));return}
+ fade=r<=60?r/60:1;applyMaster();
+ $('#tt').textContent=Math.floor(r/60)+':'+String(Math.floor(r%60)).padStart(2,'0')+(r<=60?' fading':'');
+}
+
+/* ---------- Visualizers ---------- */
+function animate(){
+ for(const c of CHANNELS){
+  const cv=c.cv,x=cv.getContext('2d'),W=cv.width,H=cv.height;
+  x.clearRect(0,0,W,H);
+  c.an.getByteFrequencyData(bins);
+  const N=24,bw=W/N;x.fillStyle=c.col;
+  for(let i=0;i<N;i++){
+   const v=bins[Math.floor(i*bins.length/N)]/255,h=Math.max(3,v*H*.95);
+   x.globalAlpha=.35+v*.65;x.fillRect(i*bw+3,(H-h)/2,bw-6,h);
+  }
+  x.globalAlpha=1;
+ }
+ requestAnimationFrame(animate);
+}
+
+/* ---------- Boot ---------- */
+function init(){
+ ctx=new(window.AudioContext||window.webkitAudioContext)();
+ if(ctx.state==='suspended')ctx.resume();
+ NB.pink=makeBuf('pink');NB.brown=makeBuf('brown');NB.white=makeBuf('white');
+ master=ctx.createGain();master.gain.value=masterVol;master.connect(ctx.destination);
+ for(const c of CHANNELS){
+  c.g=ctx.createGain();c.g.gain.value=0;
+  c.an=ctx.createAnalyser();c.an.fftSize=64;
+  c.g.connect(master);c.g.connect(c.an);
+  c.build(c.g);
+  applyCh(c);
+ }
+ $('#start').hidden=true;
+ setInterval(tick,250);
+ animate();
+}
+
+const grid=$('#grid');
+CHANNELS.forEach(c=>{
+ const el=document.createElement('div');el.className='glass card';
+ el.innerHTML=`<div class="top"><span class="ic">${c.icon}</span><div><div class="nm">${c.name}</div><div class="ds">${c.desc}</div></div></div><canvas width="260" height="56"></canvas><div class="row"><button class="btn sm mute">Mute</button><input type="range" min="0" max="1" step="0.01"></div>`;
+ c.cv=el.querySelector('canvas');c.slider=el.querySelector('input');c.mb=el.querySelector('.mute');
+ c.slider.oninput=()=>{c.vol=+c.slider.value;applyCh(c)};
+ c.mb.onclick=()=>{c.muted=!c.muted;applyCh(c);syncCard(c)};
+ grid.appendChild(el);syncCard(c);
+});
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>applyPreset(b.dataset.p));
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>setTimer(+b.dataset.t));
+$('#mv').oninput=e=>{masterVol=+e.target.value;applyMaster()};
+$('#go').onclick=init;
+</script></body></html>
