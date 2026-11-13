@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NIGHT IN</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%;background:#09090c;color:#f4f4f6;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 500px at 0% 0%,#1db95422,transparent 60%),radial-gradient(800px 500px at 100% 0%,#e5091422,transparent 60%)}
+.glass{background:rgba(255,255,255,.06);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.1);border-radius:20px}
+.top{position:sticky;top:10px;z-index:20;margin:10px auto;max-width:1180px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:10px 14px;width:calc(100% - 20px)}
+.brand{font-weight:900;letter-spacing:3px;font-size:18px}.brand span{color:#1db954}
+nav{display:flex;gap:4px;background:rgba(0,0,0,.35);border-radius:14px;padding:4px}
+nav button{background:none;border:0;color:#aaa;padding:8px 14px;border-radius:10px;font:600 13px inherit;cursor:pointer;font-family:inherit}
+nav button.on{background:#fff;color:#000}
+main{max-width:1180px;margin:0 auto;padding:12px 10px 150px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 14px}
+.srch{display:flex;gap:6px;flex:1;min-width:220px}
+.in{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:12px;padding:10px 12px;font:inherit;font-size:14px;outline:none;min-width:0}
+.btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;padding:9px 14px;border-radius:12px;font:600 13px inherit;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.2)}
+.btn.acc{background:#1db954;border-color:#1db954;color:#06130a}
+.btn.sm{padding:6px 10px;font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#ddd;padding:7px 13px;border-radius:999px;font:500 13px inherit;cursor:pointer;font-family:inherit}
+.chip.on{background:#e50914;border-color:#e50914;color:#fff}
+.tog{display:flex;gap:6px;align-items:center;font-size:13px;opacity:.9}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.tile{position:relative;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .2s,background .2s;padding-bottom:10px}
+.tile:hover{transform:translateY(-3px);background:rgba(255,255,255,.09)}
+.tile img,.ph{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#1a1a22}
+.tt{font-weight:700;font-size:14px;padding:9px 11px 2px;line-height:1.3}
+.muted{color:#9a9aa6;font-size:12px;padding:0 11px}
+.tile .pin{position:absolute;right:8px;top:8px}
+.heart{position:absolute;right:8px;top:8px;background:rgba(0,0,0,.55);border:0;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px}
+.trk img{aspect-ratio:1/1}
+.sk{height:230px;border-radius:16px;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.12),rgba(255,255,255,.04));background-size:200% 100%;animation:sh 1.3s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.err,.empty{grid-column:1/-1;text-align:center;padding:40px 20px;background:rgba(255,255,255,.04);border-radius:16px;color:#bbb}
+.err p,.empty p{margin:0 0 12px}
+.swipe{max-width:380px;margin:0 auto 20px;background:rgba(255,255,255,.05);border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.swipe img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block}
+.swipe .body{padding:16px}
+.swipe h3{margin:0 0 6px;font-size:22px}
+.swipe p{color:#bbb;font-size:13px;line-height:1.5;max-height:110px;overflow:auto}
+.swipe .acts{display:flex;gap:10px;padding:0 16px 16px}
+.swipe .acts .btn{flex:1;padding:12px}
+/* Modal */
+#modal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:30px 14px}
+.sheet{width:min(860px,100%);position:relative;padding:22px;background:#111116ee}
+#mClose{position:absolute;right:14px;top:14px}
+.rhead{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+.hero{width:260px;max-width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:18px}
+.rhead h2{margin:6px 0 12px;font-size:28px}
+.two{display:grid;grid-template-columns:1fr 1.6fr;gap:24px}
+@media(max-width:700px){.two{grid-template-columns:1fr}}
+h4{text-transform:uppercase;letter-spacing:1.5px;font-size:12px;color:#9a9aa6;margin:0 0 10px}
+.ing{display:flex;gap:8px;align-items:center;padding:6px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}
+.ing input{accent-color:#1db954;width:16px;height:16px}
+.ing input:checked+span{text-decoration:line-through;opacity:.45}
+.steps{padding-left:20px;margin:0;line-height:1.6;font-size:14px}
+.steps li{margin-bottom:10px}
+/* Player */
+#player{position:fixed;left:10px;right:10px;bottom:10px;z-index:30;display:grid;grid-template-columns:1fr 2fr 1fr;gap:16px;align-items:center;padding:10px 16px;background:rgba(20,20,26,.85)}
+.pl-l{display:flex;gap:12px;align-items:center;min-width:0}
+.art{width:52px;height:52px;border-radius:50%;object-fit:cover;background:#222;flex-shrink:0;border:2px solid #222;animation:spin 10s linear infinite;animation-play-state:paused}
+#player.playing .art{animation-play-state:running}
+@keyframes spin{to{transform:rotate(360deg)}}
+#pTitle{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.pl-m{display:flex;flex-direction:column;gap:6px;align-items:center}
+#pBtn{width:40px;height:40px;border-radius:50%;padding:0;font-size:14px;display:grid;place-items:center}
+.prog{display:flex;gap:8px;align-items:center;width:100%;font-size:11px;color:#9a9aa6;font-variant-numeric:tabular-nums}
+.prog input{flex:1}
+.pl-r{display:flex;gap:12px;align-items:center;justify-content:flex-end}
+.eq{display:flex;gap:3px;align-items:flex-end;height:18px}
+.eq i{width:3px;height:14px;background:#1db954;border-radius:2px;animation:eq .9s infinite ease-in-out}
+.eq i:nth-child(2){animation-delay:.2s}.eq i:nth-child(3){animation-delay:.4s}.eq i:nth-child(4){animation-delay:.1s}
+#player:not(.playing) .eq i{animation-play-state:paused;height:4px}
+@keyframes eq{0%,100%{height:4px}50%{height:16px}}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;background:rgba(255,255,255,.2);accent-color:#1db954;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff}
+#vol{width:90px}
+/* Drawer */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,100%);z-index:50;border-radius:0;padding:22px;overflow:auto;background:#111116f2}
+.drawer h2{margin:0 0 14px;font-size:22px}
+.sec{margin-bottom:18px}
+.sec h4{margin-bottom:8px}
+.li{display:flex;gap:10px;align-items:center;padding:8px;background:rgba(255,255,255,.05);border-radius:12px;margin-bottom:6px;font-size:14px}
+.li img{width:40px;height:40px;border-radius:8px;object-fit:cover}
+.li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.x{background:none;border:0;color:#999;cursor:pointer;font-size:16px}
+#toast{position:fixed;left:50%;top:80px;transform:translateX(-50%) translateY(-10px);background:#fff;color:#000;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:60}
+#toast.on{opacity:1;transform:translateX(-50%)}
+@media(max-width:760px){#player{grid-template-columns:1fr;gap:8px}.pl-r{justify-content:center}.top nav button{padding:7px 9px;font-size:12px}}
+</style></head>
+<body>
+<header class="top glass">
+ <div class="brand">NIGHT<span>IN</span></div>
+ <nav>
+  <button data-tab="eat" class="on">What to Eat</button>
+  <button data-tab="watch">What to Watch</button>
+  <button data-tab="hear">What to Hear</button>
+ </nav>
+ <button class="btn" id="openL">Tonight's Lineup · <b id="lcount">0</b></button>
+</header>
+
+<main>
+ <section id="t-eat" class="tab">
+  <div class="row">
+   <form id="mForm" class="srch"><input class="in" id="mQ" placeholder="Search any dish…" autocomplete="off"><button class="btn">Search</button></form>
+   <button class="btn acc" id="surprise">🎲 Surprise Dinner</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="grid" id="meals"></div>
+ </section>
+
+ <section id="t-watch" class="tab" hidden>
+  <div class="row">
+   <form id="sForm" class="srch"><input class="in" id="sQ" placeholder="Search shows…" autocomplete="off"><button class="btn">Search</button></form>
+   <label class="tog"><input type="checkbox" id="swipeTog"> Quick-Decide Swipe</label>
+  </div>
+  <div class="chips" id="genres"></div>
+  <div id="swipe" class="swipe" hidden></div>
+  <div class="grid" id="shows"></div>
+ </section>
+
+ <section id="t-hear" class="tab" hidden>
+  <div class="chips" id="presets"></div>
+  <div class="row"><form id="tForm" class="srch"><input class="in" id="tQ" placeholder="Search artist or song…" autocomplete="off"><button class="btn">Search</button></form></div>
+  <div class="grid" id="tracks"></div>
+ </section>
+</main>
+
+<div id="player" class="glass">
+ <div class="pl-l"><img id="pArt" class="art" alt=""><div style="min-width:0"><div id="pTitle">Pick a track to start</div><div id="pArtist" class="muted" style="padding:0"></div></div></div>
+ <div class="pl-m">
+  <button id="pBtn" class="btn" aria-label="Play/pause">▶</button>
+  <div class="prog"><span id="tCur">0:00</span><input type="range" id="scrub" min="0" max="1000" value="0"><span id="tDur">0:00</span></div>
+ </div>
+ <div class="pl-r"><div class="eq"><i></i><i></i><i></i><i></i></div><input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Volume"></div>
+</div>
+<audio id="au" preload="none"></audio>
+
+<aside id="lineup" class="drawer" hidden>
+ <div style="display:flex;justify-content:space-between;align-items:center"><h2>Tonight's Lineup</h2><button class="x" id="closeL" aria-label="Close">✕</button></div>
+ <div id="lBody"></div>
+ <div class="row"><button class="btn acc" id="share">Share</button><button class="btn" id="reset">Reset</button></div>
+</aside>
+
+<div id="modal" hidden><div class="sheet glass"><button id="mClose" class="btn sm">✕ Close</button><div id="mbody"></div></div></div>
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MEAL='https://www.themealdb.com/api/json/v1/1/';
+const J=async(url,ms=9000)=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(t)}};
+const store={get(){try{return JSON.parse(localStorage.getItem('nightin.lineup'))||{}}catch(e){return{}}},set(v){try{localStorage.setItem('nightin.lineup',JSON.stringify(v))}catch(e){}}};
+let L=store.get();L.tracks=L.tracks||[];
+const save=()=>store.set(L);
+const retries=[];
+const retryBtn=fn=>{retries.push(fn);return `<button class="btn" data-rid="${retries.length-1}">Try again</button>`};
+const errBox=(msg,fn)=>`<div class="err"><p>${msg}</p>${retryBtn(fn)}</div>`;
+const emptyBox=msg=>`<div class="empty"><p>${msg}</p></div>`;
+const skel=n=>Array.from({length:n},()=>'<div class="sk"></div>').join('');
+const fmtT=s=>isFinite(s)?Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'):'0:00';
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)}
+
+/* ---------- Tabs ---------- */
+function tab(id){
+ $$('.tab').forEach(s=>s.hidden=s.id!=='t-'+id);
+ $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===id));
+}
+$$('nav button').forEach(b=>b.onclick=()=>{tab(b.dataset.tab);if(b.dataset.tab==='watch'&&!SHOWS.length)loadShows(lastQ);});
+
+/* ---------- Recipes (TheMealDB) ---------- */
+const CHIPS={Chicken:'Chicken',Pasta:'Spaghetti',Beef:'Beef',Eggs:'Eggs',Cheese:'Cheese',Rice:'Rice',Seafood:'Prawns'};
+let activeChip=null;
+function renderChips(){
+ $('#chips').innerHTML=Object.keys(CHIPS).map(k=>`<button class="chip ${activeChip===k?'on':''}" data-chip="${k}">${k}</button>`).join('');
+}
+async function mealList(url,label){
+ const g=$('#meals');g.innerHTML=skel(8);
+ try{
+  const d=await J(url);const ms=d.meals||[];
+  if(!ms.length){g.innerHTML=emptyBox(`No ${esc(label)} recipes found. Try another search.`);return}
+  g.innerHTML=ms.map(m=>`<div class="tile" data-meal="${esc(m.idMeal)}"><img loading="lazy" src="${esc(m.strMealThumb)}" alt=""><div class="tt">${esc(m.strMeal)}</div></div>`).join('');
+ }catch(e){g.innerHTML=errBox('Recipes are unavailable right now.',()=>mealList(url,label))}
+}
+async function openMeal(id){
+ $('#modal').hidden=false;$('#mbody').innerHTML='<div class="sk" style="height:360px"></div>';
+ try{const d=await J(MEAL+'lookup.php?i='+encodeURIComponent(id));renderMeal(d.meals[0])}
+ catch(e){$('#mbody').innerHTML=errBox('Could not load this recipe.',()=>openMeal(id))}
+}
+function renderMeal(x){
+ const ing=[];for(let i=1;i<=20;i++){const n=(x['strIngredient'+i]||'').trim();if(n)ing.push([n,(x['strMeasure'+i]||'').trim()])}
+ const steps=(x.strInstructions||'').split(/\r?\n+/).map(s=>s.trim()).filter(Boolean);
+ $('#mbody').innerHTML=`<div class="rhead"><img class="hero" src="${esc(x.strMealThumb)}" alt=""><div><div class="muted" style="padding:0">${esc(x.strCategory||'')} · ${esc(x.strArea||'')}</div><h2>${esc(x.strMeal)}</h2><button class="btn acc" id="pinMeal">Pin to Tonight's Lineup</button></div></div>
+ <div class="two"><div><h4>Ingredients</h4>${ing.map(p=>`<label class="ing"><input type="checkbox"><span>${esc(p[1])} ${esc(p[0])}</span></label>`).join('')}</div>
+ <div><h4>Method</h4><ol class="steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div></div>`;
+ $('#pinMeal').onclick=()=>{L.meal={id:x.idMeal,name:x.strMeal,thumb:x.strMealThumb};save();renderLineup();toast('Dinner pinned')};
+}
+$('#mForm').onsubmit=e=>{e.preventDefault();const q=$('#mQ').value.trim();if(!q)return;activeChip=null;renderChips();mealList(MEAL+'search.php?s='+encodeURIComponent(q),q)};
+$('#surprise').onclick=async()=>{
+ $('#modal').hidden=false;$('#mbody').innerHTML='<div class="sk" style="height:360px"></div>';
+ try{const d=await J(MEAL+'random.php');renderMeal(d.meals[0])}
+ catch(e){$('#mbody').innerHTML=errBox('Surprise unavailable right now.',()=>$('#surprise').click())}
+};
+$('#chips').onclick=e=>{const c=e.target.closest('[data-chip]');if(!c)return;activeChip=c.dataset.chip;renderChips();mealList(MEAL+'filter.php?i='+encodeURIComponent(CHIPS[activeChip]),activeChip)};
+
+/* ---------- Shows (TVMaze) ---------- */
+const GENRES={'Sci-Fi':'Science','Thriller':'Thriller','Comedy':'Comedy','Crime':'Crime','Drama':'Drama','Anime':'Anime'};
+let GENRE=null,SHOWS=[],POOL=null,swipeList=[],swipeIdx=0,swipeOn=false,lastQ='';
+async function getPage(p){try{return await J('https://api.tvmaze.com/shows?page='+p)}catch(e){return[]}}
+async function getPool(){
+ if(POOL)return POOL;
+ const pages=await Promise.all([0,1,2].map(getPage));
+ POOL=pages.flat().filter(s=>s.image&&s.rating&&s.rating.average).sort((a,b)=>b.rating.average-a.rating.average);
+ return POOL;
+}
+async function fetchShows(q){
+ let list;
+ if(q){const d=await J('https://api.tvmaze.com/search/shows?q='+encodeURIComponent(q));list=d.map(x=>x.show)}
+ else list=await getPool();
+ if(GENRE)list=list.filter(s=>(s.genres||[]).some(g=>g.includes(GENRE)));
+ return list;
+}
+async function loadShows(q=''){
+ lastQ=q;const g=$('#shows');g.innerHTML=skel(8);
+ try{
+  const list=await fetchShows(q);
+  SHOWS=list.slice(0,40);swipeList=list;swipeIdx=0;
+  g.innerHTML=SHOWS.length?SHOWS.map((s,i)=>`<div class="tile"><img loading="lazy" src="${esc(s.image?.medium||'')}" alt=""><div class="tt">${esc(s.name)}</div><div class="muted">★ ${s.rating?.average??'—'} · ${esc((s.genres||[]).slice(0,2).join(', '))}</div><div style="padding:8px 11px 0"><button class="btn sm" data-pin-show="${i}">+ Tonight</button></div></div>`).join(''):emptyBox('No shows match that. Try a different genre or search.');
+  if(swipeOn)renderSwipe();
+ }catch(e){g.innerHTML=errBox('TV listings are unavailable right now.',()=>loadShows(q))}
+}
+function renderSwipe(){
+ const box=$('#swipe');
+ if(!swipeList.length){box.innerHTML=skel(1);loadShows(lastQ);return}
+ const s=swipeList[swipeIdx];
+ if(!s){box.innerHTML=`<div class="body" style="text-align:center"><h3>That's the list!</h3><button class="btn" id="restartSw">Start over</button></div>`;$('#restartSw').onclick=()=>{swipeIdx=0;renderSwipe()};return}
+ const sum=(s.summary||'').replace(/<[^>]+>/g,'');
+ box.innerHTML=`<img src="${esc(s.image?.original||s.image?.medium||'')}" alt=""><div class="body"><h3>${esc(s.name)}</h3><div class="muted" style="padding:0;margin-bottom:8px">★ ${s.rating?.average??'—'} · ${esc((s.genres||[]).join(', '))}</div><p>${esc(sum)}</p></div><div class="acts"><button class="btn" id="skipSh">Skip</button><button class="btn acc" id="addSh">Add to Tonight's Plan</button></div>`;
+ $('#skipSh').onclick=()=>{swipeIdx++;renderSwipe()};
+ $('#addSh').onclick=()=>{pinShow(s);swipeIdx++;renderSwipe()};
+}
+function pinShow(s){L.show={id:s.id,name:s.name,image:s.image?.medium||''};save();renderLineup();toast('Show added to tonight')}
+$('#sForm').onsubmit=e=>{e.preventDefault();loadShows($('#sQ').value.trim())};
+$('#genres').innerHTML=Object.keys(GENRES).map(k=>`<button class="chip" data-genre="${k}">${k}</button>`).join('');
+$('#genres').onclick=e=>{const c=e.target.closest('[data-genre]');if(!c)return;const k=c.dataset.genre;GENRE=GENRE===GENRES[k]?null:GENRES[k];$$('[data-genre]').forEach(b=>b.classList.toggle('on',GENRE===GENRES[b.dataset.genre]));swipeIdx=0;loadShows(lastQ)};
+$('#swipeTog').onchange=e=>{swipeOn=e.target.checked;$('#shows').hidden=swipeOn;$('#swipe').hidden=!swipeOn;if(swipeOn)renderSwipe()};
+$('#shows').onclick=e=>{const b=e.target.closest('[data-pin-show]');if(b)pinShow(SHOWS[+b.dataset.pinShow])};
+
+/* ---------- Music (iTunes) + persistent player ---------- */
+const PRESETS=[['Lo-Fi Chill','lofi chill beats'],['Amapiano','amapiano'],['80s Synthwave','80s synthwave'],['Acoustic Dinner','acoustic dinner'],['Late Night Jazz','late night jazz']];
+let TR=[],cur=null;
+const au=$('#au');
+$('#presets').innerHTML=PRESETS.map(([n,q])=>`<button class="chip" data-q="${esc(q)}">${n}</button>`).join('');
+async function searchTracks(q){
+ const g=$('#tracks');g.innerHTML=skel(8);
+ try{
+  const d=await J(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=music&limit=24`);
+  TR=d.results.filter(r=>r.previewUrl).map(r=>({id:r.trackId,name:r.trackName,artist:r.artistName,art:(r.artworkUrl100||'').replace('100x100','600x600'),url:r.previewUrl}));
+  renderTracks();
+ }catch(e){g.innerHTML=errBox('Music search is unavailable right now.',()=>searchTracks(q))}
+}
+const isFav=id=>L.tracks.some(t=>t.id===id);
+function renderTracks(){
+ $('#tracks').innerHTML=TR.length?TR.map((t,i)=>`<div class="tile trk" data-track="${i}"><img loading="lazy" src="${esc(t.art)}" alt=""><div class="tt">${esc(t.name)}</div><div class="muted">${esc(t.artist)}</div><button class="heart" data-fav="${i}" aria-label="Favorite">${isFav(t.id)?'♥':'♡'}</button></div>`).join(''):emptyBox('No previews found. Try another search.');
+}
+function toggleFav(t){
+ const i=L.tracks.findIndex(x=>x.id===t.id);
+ if(i>=0)L.tracks.splice(i,1);else L.tracks.push({id:t.id,name:t.name,artist:t.artist,art:t.art});
+ save();renderLineup();renderTracks();
+}
+function playTrack(t){
+ if(cur&&cur.id===t.id){au.paused?au.play().catch(()=>toast('Tap play again')):au.pause();return}
+ cur=t;au.src=t.url;$('#pTitle').textContent=t.name;$('#pArtist').textContent=t.artist;$('#pArt').src=t.art;
+ au.play().catch(()=>toast('Playback was blocked. Tap play.'));
+}
+function uiPlay(){const p=!au.paused&&!au.ended;$('#player').classList.toggle('playing',p);$('#pBtn').textContent=p?'❚❚':'▶'}
+au.addEventListener('play',uiPlay);au.addEventListener('pause',uiPlay);au.addEventListener('ended',uiPlay);
+au.addEventListener('timeupdate',()=>{if(au.duration){$('#scrub').value=au.currentTime/au.duration*1000;$('#tCur').textContent=fmtT(au.currentTime)}});
+au.addEventListener('loadedmetadata',()=>$('#tDur').textContent=fmtT(au.duration));
+au.addEventListener('error',()=>{if(cur)toast('Preview unavailable for this track')});
+$('#pBtn').onclick=()=>{if(!cur)return;au.paused?au.play().catch(()=>{}):au.pause()};
+$('#scrub').oninput=e=>{if(au.duration)au.currentTime=e.target.value/1000*au.duration};
+$('#vol').oninput=e=>au.volume=+e.target.value;
+au.volume=0.8;
+
+$('#presets').onclick=e=>{const c=e.target.closest('[data-q]');if(!c)return;$$('#presets .chip').forEach(b=>b.classList.toggle('on',b===c));searchTracks(c.dataset.q)};
+$('#tForm').onsubmit=e=>{e.preventDefault();const q=$('#tQ').value.trim();if(q)searchTracks(q)};
+$('#tracks').onclick=e=>{
+ const f=e.target.closest('[data-fav]');if(f){toggleFav(TR[+f.dataset.fav]);return}
+ const t=e.target.closest('[data-track]');if(t)playTrack(TR[+t.dataset.track]);
+};
+
+/* ---------- Tonight's Lineup ---------- */
+function renderLineup(){
+ const count=(L.meal?1:0)+(L.show?1:0)+L.tracks.length;
+ $('#lcount').textContent=count;
+ $('#lBody').innerHTML=`
+  <div class="sec"><h4>Dinner</h4>${L.meal?`<div class="li"><img src="${esc(L.meal.thumb)}" alt=""><span>${esc(L.meal.name)}</span><button class="x" data-clr="meal">✕</button></div>`:'<p class="muted" style="padding:0">Nothing pinned yet.</p>'}</div>
+  <div class="sec"><h4>Watch</h4>${L.show?`<div class="li">${L.show.image?`<img src="${esc(L.show.image)}" alt="">`:''}<span>${esc(L.show.name)}</span><button class="x" data-clr="show">✕</button></div>`:'<p class="muted" style="padding:0">Nothing pinned yet.</p>'}</div>
+  <div class="sec"><h4>Music</h4>${L.tracks.length?L.tracks.map(t=>`<div class="li"><img src="${esc(t.art)}" alt=""><span>${esc(t.name)} — ${esc(t.artist)}</span><button class="x" data-untrack="${esc(t.id)}">✕</button></div>`).join(''):'<p class="muted" style="padding:0">No favorites yet.</p>'}</div>`;
+ save();
+}
+$('#lBody').onclick=e=>{
+ const c=e.target.closest('[data-clr]');if(c){L[c.dataset.clr]=null;renderLineup();return}
+ const u=e.target.closest('[data-untrack]');if(u){L.tracks=L.tracks.filter(t=>String(t.id)!==u.dataset.untrack);renderLineup();renderTracks()}
+};
+$('#openL').onclick=()=>$('#lineup').hidden=false;
+$('#closeL').onclick=()=>$('#lineup').hidden=true;
+$('#reset').onclick=()=>{if(!confirm('Clear tonight\'s lineup?'))return;L={tracks:[]};renderLineup();renderTracks()};
+$('#share').onclick=async()=>{
+ const txt=`Tonight's Lineup 🌙\nDinner: ${L.meal?L.meal.name:'—'}\nWatch: ${L.show?L.show.name:'—'}\nMusic: ${L.tracks.map(t=>t.name).join(', ')||'—'}`;
+ try{
+  if(navigator.share)await navigator.share({text:txt});
+  else{await navigator.clipboard.writeText(txt);toast('Lineup copied')}
+ }catch(e){
+  try{await navigator.clipboard.writeText(txt);toast('Lineup copied')}catch(_){toast('Sharing not available here')}
+ }
+};
+
+/* ---------- Global handlers ---------- */
+document.addEventListener('click',e=>{
+ const rb=e.target.closest('[data-rid]');if(rb){retries[+rb.dataset.rid]();return}
+ const m=e.target.closest('[data-meal]');if(m)openMeal(m.dataset.meal);
+});
+$('#mClose').onclick=()=>$('#modal').hidden=true;
+$('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').hidden=true};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#modal').hidden=true;$('#lineup').hidden=true}});
+
+/* ---------- Boot ---------- */
+renderChips();
+renderLineup();
+tab('eat');
+mealList(MEAL+'filter.php?i=Chicken','Chicken');
+</script>
+</body></html>
