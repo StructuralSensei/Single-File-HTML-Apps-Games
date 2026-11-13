@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Command Center</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#07090f;color:#eef2ff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 600px at 10% -10%,#312e8155,transparent 60%),radial-gradient(800px 600px at 110% 10%,#0e749055,transparent 60%),radial-gradient(700px 500px at 50% 120%,#be185d33,transparent 60%)}
+.wrap{max-width:1200px;margin:0 auto;padding:18px}
+.glass{background:rgba(255,255,255,.06);backdrop-filter:blur(20px) saturate(150%);-webkit-backdrop-filter:blur(20px) saturate(150%);border:1px solid rgba(255,255,255,.12);border-radius:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 12px 40px rgba(0,0,0,.35)}
+.top{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:14px 18px;margin-bottom:14px}
+.clocks{display:flex;gap:20px;flex-wrap:wrap}
+.clk small{display:block;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;opacity:.55}
+.clk b{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.tools{display:flex;gap:10px;align-items:center;font-size:12px;opacity:.85;flex-wrap:wrap}
+.btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#eef2ff;padding:8px 13px;border-radius:12px;font:500 12px system-ui,sans-serif;cursor:pointer;transition:.2s}
+.btn:hover{background:rgba(255,255,255,.2)}
+.in{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:10px;padding:7px 10px;font:inherit;font-size:13px;outline:none;min-width:0;width:100%}
+select.in option{color:#000}
+.bento{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(150px,auto);grid-auto-flow:dense;gap:14px}
+.card{padding:18px;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.card h3{margin:0 0 12px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;opacity:.6;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.card .ctl{margin-bottom:10px}
+.wx{grid-column:span 2;grid-row:span 2}.cr{grid-column:span 2}.fx{grid-column:span 2}.hn{grid-column:span 2;grid-row:span 2}.eq{grid-column:span 4}.qt{grid-column:span 2}.wd{grid-column:span 2}
+.sk{display:none}
+.loading .sk{display:block}.loading .body{display:none}
+.sk i{display:block;height:14px;border-radius:8px;margin-bottom:10px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.14),rgba(255,255,255,.05));background-size:200% 100%;animation:sh 1.4s infinite}
+.sk i:nth-child(2){width:70%}.sk i:nth-child(3){width:45%;height:40px}
+@keyframes sh{to{background-position:-200% 0}}
+.fb{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:13px;opacity:.8;text-align:center}
+.err .fb{display:flex}.err .body{display:none}
+.big{font-size:64px;font-weight:200;line-height:1}
+.muted{opacity:.6;font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.stats div{background:rgba(255,255,255,.05);border-radius:12px;padding:8px;font-size:13px;font-weight:600}
+.stats small{display:block;font-weight:400;font-size:10px;opacity:.55;text-transform:uppercase;letter-spacing:1px}
+.fr{display:grid;grid-template-columns:44px 26px 34px 1fr 34px;gap:8px;align-items:center;font-size:12px;padding:4px 6px;border-radius:8px}
+.fr:hover{background:rgba(255,255,255,.06)}
+.ft{position:relative;height:6px;border-radius:6px;background:rgba(255,255,255,.1)}
+.ft i{position:absolute;top:0;height:100%;border-radius:6px;background:linear-gradient(90deg,#60a5fa,#fbbf24)}
+.rw{display:grid;grid-template-columns:60px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px}
+.badge{padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.up{background:rgba(34,197,94,.18);color:#4ade80}.dn{background:rgba(239,68,68,.18);color:#f87171}
+.conv{display:grid;grid-template-columns:1fr 84px 1fr;gap:6px;align-items:center}
+.res{margin-top:8px;font-size:22px;font-weight:300;font-variant-numeric:tabular-nums}
+.map{width:100%;height:auto;border-radius:12px;background:rgba(0,0,0,.25);margin-bottom:10px}
+.ep{fill:#f97316;fill-opacity:.7;stroke:#fff3;stroke-width:.5}
+.ep.hi{fill:#ef4444}.ep.lo{fill:#facc15}
+.eqg{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px}
+.eqr{display:flex;gap:10px;align-items:center}
+.mg{min-width:38px;text-align:center;padding:4px 0;border-radius:10px;font-weight:700;font-size:13px;background:rgba(250,204,21,.18);color:#facc15}
+.mg.md{background:rgba(249,115,22,.2);color:#fb923c}.mg.hi{background:rgba(239,68,68,.2);color:#f87171}
+.hn-i{display:block;color:#eef2ff;text-decoration:none;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;line-height:1.35}
+.hn-i:hover div{text-decoration:underline}
+.hn-i small{opacity:.55;font-size:12px}
+blockquote{margin:0;font-size:17px;font-style:italic;line-height:1.5}
+.au{margin-top:10px;font-size:12px;opacity:.6}
+.word{font-size:30px;font-weight:300;text-transform:capitalize}
+@media(max-width:900px){.bento{grid-template-columns:1fr 1fr}.eq{grid-column:span 2}}
+@media(max-width:560px){.bento{grid-template-columns:1fr}.wx,.cr,.fx,.hn,.eq,.qt,.wd{grid-column:span 1;grid-row:span 1}.stats{grid-template-columns:1fr 1fr}.eqg{grid-template-columns:1fr}}
+</style></head>
+<body><div class="wrap">
+<header class="glass top">
+ <div class="clocks" id="clocks"></div>
+ <div class="tools"><span id="ts">Loading…</span><button class="btn" id="refreshAll">↻ Refresh All Data</button></div>
+</header>
+<main class="bento">
+ <section class="glass card wx" id="w-wx"><h3><span>Weather &amp; Air</span></h3>
+  <form class="ctl" id="cityF" style="display:flex;gap:6px"><input class="in" id="cityIn" placeholder="Search any city…" autocomplete="off"><button class="btn" type="submit">Go</button></form>
+  <div id="cityMsg" class="muted" style="min-height:14px;margin:-4px 0 6px"></div>
+  <div class="sk"><i></i><i></i><i></i></div><div class="body" id="b-wx"></div>
+  <div class="fb"><span class="fbm"></span><button class="btn" data-r="wx">Retry</button></div></section>
+ <section class="glass card cr" id="w-cr"><h3><span>Crypto · 24h</span></h3>
+  <div class="sk"><i></i><i></i><i></i></div><div class="body" id="b-cr"></div>
+  <div class="fb"><span class="fbm"></span><button class="btn" data-r="cr">Retry</button></div></section>
+ <section class="glass card fx" id="w-fx"><h3><span>Currency · Base <select class="in" id="base" style="width:90px;display:inline-block;margin-left:6px"></select></span></h3>
+  <div class="ctl conv"><input class="in" id="amt" type="number" value="100" min="0"><select class="in" id="cf"></select><select class="in" id="ct"></select></div>
+  <div class="res" id="res">—</div>
+  <div class="sk"><i></i><i></i><i></i></div><div class="body" id="b-fx"></div>
+  <div class="fb"><span class="fbm"></span><button class="btn" data-r="fx">Retry</button></div></section>
+ <section class="glass card hn" id="w-hn"><h3><span>Tech Pulse · Hacker News</span></h3>
+  <div class="sk"><i></i><i></i><i></i></div><div class="body" id="b-hn"></div>
+  <div class="fb"><span class="fbm"></span><button class="btn" data-r="hn">Retry</button></div></section>
+ <section class="glass card eq" id="w-eq"><h3><span>Seismic · M4.5+ past day</span></h3>
+  <div class="sk"><i></i><i></i><i></i></div><div class="body" id="b-eq"></div>
+  <div class="fb"><span class="fbm"></span><button class="btn" data-r="eq">Retry</button></div></section>
+ <section class="glass card qt" id="w-qt"><h3><span>Daily Wisdom</span></h3>
+  <div class="ctl" style="display:flex;gap:6px"><button class="btn" data-r="qt">New Quote</button><button class="btn" id="copyQ">Copy</button></div>
+  <div class="sk"><i></i><i></i><i></i></div><div class="body" id="b-qt"></div>
+  <div class="fb"><span class="fbm"></span><button class="btn" data-r="qt">Retry</button></div></section>
+ <section class="glass card wd" id="w-wd"><h3><span>Word of the Day</span></h3>
+  <div class="sk"><i></i><i></i><i></i></div><div class="body" id="b-wd"></div>
+  <div class="fb"><span class="fbm"></span><button class="btn" data-r="wd">Retry</button></div></section>
+</main></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS={get(k,d){try{return JSON.parse(localStorage.getItem('cc.'+k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem('cc.'+k,JSON.stringify(v))}catch(e){}}};
+let city=LS.get('city',null),base=LS.get('base','USD'),curQ='',fxCache={};
+const DEF_CITY={name:'London, United Kingdom',lat:51.5074,lon:-0.1278};
+if(!city)city=DEF_CITY;
+
+async function getJSON(url,ms=9000){
+ const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);
+ try{const r=await fetch(url,{signal:c.signal,headers:{Accept:'application/json'}});if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
+ finally{clearTimeout(t)}
+}
+function wg(k){
+ const el=document.getElementById('w-'+k);
+ return{body:document.getElementById('b-'+k),
+  load(){el.classList.add('loading');el.classList.remove('err')},
+  ok(){el.classList.remove('loading','err')},
+  fail(m){el.classList.remove('loading');el.classList.add('err');el.querySelector('.fbm').textContent=m}};
+}
+const fmtUSD=p=>p.toLocaleString('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:p<1?6:2});
+const rel=t=>{const s=(Date.now()-t)/1000;return s<3600?Math.max(1,Math.floor(s/60))+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago'};
+const WX={0:['Clear','☀️'],1:['Mostly clear','🌤️'],2:['Partly cloudy','⛅'],3:['Overcast','☁️'],45:['Fog','🌫️'],48:['Fog','🌫️'],51:['Drizzle','🌦️'],53:['Drizzle','🌦️'],55:['Drizzle','🌦️'],61:['Rain','🌧️'],63:['Rain','🌧️'],65:['Heavy rain','🌧️'],71:['Snow','❄️'],73:['Snow','❄️'],75:['Heavy snow','❄️'],80:['Showers','🌦️'],81:['Showers','🌦️'],82:['Heavy showers','⛈️'],95:['Thunderstorm','⛈️'],96:['Thunderstorm','⛈️'],99:['Thunderstorm','⛈️']};
+const wx=c=>WX[c]||['Cloudy','☁️'];
+
+/* ---------- Clock ---------- */
+const ZONES=[['Local',null],['UTC','UTC'],['New York','America/New_York'],['London','Europe/London'],['Tokyo','Asia/Tokyo']];
+const CF=ZONES.map(([,tz])=>new Intl.DateTimeFormat('en-GB',{timeZone:tz||undefined,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}));
+function renderClocks(){const d=new Date();$('#clocks').innerHTML=ZONES.map(([n],i)=>`<div class="clk"><small>${n}</small><b>${CF[i].format(d)}</b></div>`).join('')}
+setInterval(renderClocks,1000);
+
+/* ---------- Weather + AQI ---------- */
+async function loadWx(){
+ const w=wg('wx');w.load();
+ try{
+  const d=await getJSON(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`);
+  const a=await getJSON(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}&current=us_aqi`).catch(()=>null);
+  const c=d.current,dl=d.daily,[cond,icon]=wx(c.weather_code);
+  const aqi=a&&a.current?a.current.us_aqi:null;
+  const aqiT=aqi==null?'—':aqi<=50?'Good':aqi<=100?'Moderate':aqi<=150?'Unhealthy*':'Unhealthy';
+  const gmin=Math.min(...dl.temperature_2m_min),gmax=Math.max(...dl.temperature_2m_max),span=(gmax-gmin)||1;
+  const rows=dl.time.map((t,i)=>{const lo=dl.temperature_2m_min[i],hi=dl.temperature_2m_max[i];
+   const L=(lo-gmin)/span*100,Wd=Math.max(2,(hi-lo)/span*100),day=i===0?'Today':new Date(t+'T12:00').toLocaleDateString('en-US',{weekday:'short'});
+   return `<div class="fr" title="${day}: ${Math.round(lo)}° to ${Math.round(hi)}°"><span>${day}</span><span>${wx(dl.weather_code[i])[1]}</span><span class="muted">${Math.round(lo)}°</span><span class="ft"><i style="left:${L}%;width:${Wd}%"></i></span><span>${Math.round(hi)}°</span></div>`}).join('');
+  w.body.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="muted">${esc(city.name)}</div><div class="big">${Math.round(c.temperature_2m)}°</div><div>${cond}</div></div><div style="font-size:56px">${icon}</div></div>
+   <div class="stats"><div><small>Wind</small>${Math.round(c.wind_speed_10m)} km/h</div><div><small>Humidity</small>${c.relative_humidity_2m}%</div><div><small>UV</small>${c.uv_index??'—'}</div><div><small>AQI</small>${aqi==null?'—':aqi+' '+aqiT}</div></div>
+   ${rows}`;
+  w.ok();
+ }catch(e){w.fail('Weather service unreachable. Try again shortly.')}
+}
+async function setCity(q){
+ const m=$('#cityMsg');m.textContent='Searching…';
+ try{
+  const d=await getJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1`);
+  const r=d.results&&d.results[0];if(!r)throw new Error('none');
+  city={name:r.name+(r.country?', '+r.country:''),lat:r.latitude,lon:r.longitude};
+  LS.set('city',city);m.textContent='';loadWx();
+ }catch(e){m.textContent='City not found or search offline.'}
+}
+$('#cityF').onsubmit=e=>{e.preventDefault();const q=$('#cityIn').value.trim();if(q)setCity(q)};
+
+/* ---------- Crypto ---------- */
+async function loadCr(){
+ const w=wg('cr');w.load();
+ try{
+  const d=await getJSON('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,dogecoin&vs_currencies=usd&include_24hr_change=true');
+  w.body.innerHTML=[['bitcoin','BTC'],['ethereum','ETH'],['solana','SOL'],['dogecoin','DOGE']].map(([id,s])=>{
+   const p=d[id].usd,ch=d[id].usd_24h_change||0;
+   return `<div class="rw"><b>${s}</b><span>${fmtUSD(p)}</span><span class="badge ${ch>=0?'up':'dn'}">${ch>=0?'+':''}${ch.toFixed(2)}%</span></div>`}).join('');
+  w.ok();
+ }catch(e){w.fail('Market data unavailable (offline or rate-limited).')}
+}
+
+/* ---------- Forex ---------- */
+async function getRates(b){
+ if(fxCache[b])return fxCache[b];
+ const d=await getJSON(`https://api.frankfurter.app/latest?from=${b}`);
+ fxCache[b]={...d.rates,[b]:1};return fxCache[b];
+}
+async function loadFx(){
+ const w=wg('fx');w.load();
+ try{
+  const r=await getRates(base);
+  const codes=Object.keys(r).sort();
+  if(!$('#base').options.length){
+   const opts=codes.map(c=>`<option>${c}</option>`).join('');
+   $('#base').innerHTML=opts;$('#cf').innerHTML=opts;$('#ct').innerHTML=opts;
+  }
+  $('#base').value=base;
+  if(!$('#cf').value||$('#cf').value===$('#ct').value)$('#cf').value=base;
+  w.body.innerHTML=['EUR','GBP','JPY','CHF','CAD','AUD','INR','CNY'].filter(c=>c!==base&&r[c]).map(c=>
+   `<div class="rw"><b>${c}</b><span class="muted">1 ${base} =</span><span>${r[c].toFixed(4)}</span></div>`).join('');
+  w.ok();convert();
+ }catch(e){w.fail('Exchange rates unavailable.')}
+}
+async function convert(){
+ try{
+  const f=$('#cf').value,t=$('#ct').value,a=+$('#amt').value||0;
+  const r=await getRates(f);
+  $('#res').textContent=(a*r[t]).toLocaleString('en-US',{maximumFractionDigits:4})+' '+t;
+ }catch(e){$('#res').textContent='Rate unavailable'}
+}
+['#amt','#cf','#ct'].forEach(s=>$(s).addEventListener('input',convert));
+$('#base').onchange=e=>{base=e.target.value;LS.set('base',base);$('#cf').value=base;loadFx()};
+
+/* ---------- Hacker News ---------- */
+async function loadHn(){
+ const w=wg('hn');w.load();
+ try{
+  const ids=await getJSON('https://hacker-news.firebaseio.com/v0/topstories.json');
+  const items=(await Promise.all(ids.slice(0,6).map(id=>getJSON(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).catch(()=>null)))).filter(Boolean);
+  if(!items.length)throw new Error('empty');
+  w.body.innerHTML=items.map(it=>`<a class="hn-i" href="${esc(it.url||'https://news.ycombinator.com/item?id='+it.id)}" target="_blank" rel="noopener noreferrer"><div>${esc(it.title)}</div><small>▲ ${it.score||0} · 💬 ${it.descendants||0}</small></a>`).join('');
+  w.ok();
+ }catch(e){w.fail('Hacker News is unreachable right now.')}
+}
+
+/* ---------- Earthquakes ---------- */
+const sev=m=>m>=6?'hi':m>=5?'md':'lo';
+async function loadEq(){
+ const w=wg('eq');w.load();
+ try{
+  const d=await getJSON('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson');
+  const q=d.features.filter(f=>f.properties.mag!=null).sort((a,b)=>b.properties.time-a.properties.time).slice(0,8);
+  let grid='';for(let x=0;x<=360;x+=30)grid+=`<line x1="${x}" y1="0" x2="${x}" y2="180"/>`;
+  for(let y=0;y<=180;y+=30)grid+=`<line x1="0" y1="${y}" x2="360" y2="${y}"/>`;
+  const dots=q.map(f=>{const[x,y]=f.geometry.coordinates,m=f.properties.mag;
+   return `<circle class="ep ${sev(m)}" cx="${(x+180).toFixed(1)}" cy="${(90-y).toFixed(1)}" r="${Math.max(2,m*1.2).toFixed(1)}"><title>M${m} ${esc(f.properties.place)}</title></circle>`}).join('');
+  const list=q.map(f=>{const p=f.properties,m=p.mag;
+   return `<div class="eqr"><span class="mg ${sev(m)}">${m.toFixed(1)}</span><div><div>${esc(p.place)}</div><small class="muted">${f.geometry.coordinates[2].toFixed(0)} km deep · ${rel(p.time)}</small></div></div>`}).join('');
+  w.body.innerHTML=`<svg class="map" viewBox="0 0 360 180"><g stroke="rgba(255,255,255,.08)" stroke-width=".4">${grid}</g>${dots}</svg><div class="eqg">${list}</div>`;
+  w.ok();
+ }catch(e){w.fail('USGS seismic feed unavailable.')}
+}
+
+/* ---------- Quote ---------- */
+async function loadQt(){
+ const w=wg('qt');w.load();
+ try{
+  const q=await getJSON('https://dummyjson.com/quotes/random');
+  curQ=`"${q.quote}" — ${q.author}`;
+  w.body.innerHTML=`<blockquote>“${esc(q.quote)}”</blockquote><div class="au">— ${esc(q.author)}</div>`;
+  w.ok();
+ }catch(e){w.fail('Quote service unavailable.')}
+}
+$('#copyQ').onclick=async()=>{
+ try{await navigator.clipboard.writeText(curQ);$('#copyQ').textContent='Copied ✓';}
+ catch(e){$('#copyQ').textContent='Copy blocked'}
+ setTimeout(()=>$('#copyQ').textContent='Copy',1400);
+};
+
+/* ---------- Word of the day ---------- */
+const WORDS=['serendipity','ephemeral','lucid','tenacity','resilience','equanimity','luminous','vestige'];
+async function loadWd(){
+ const w=wg('wd');w.load();
+ try{
+  const word=WORDS[Math.floor(Date.now()/864e5)%WORDS.length];
+  const d=await getJSON('https://api.dictionaryapi.dev/api/v2/entries/en/'+word);
+  const m=d[0].meanings[0];
+  w.body.innerHTML=`<div class="word">${esc(d[0].word)}</div><div class="muted">${esc(m.partOfSpeech)}${d[0].phonetic?' · '+esc(d[0].phonetic):''}</div><p style="font-size:14px;line-height:1.5;margin:10px 0 0">${esc(m.definitions[0].definition)}</p>`;
+  w.ok();
+ }catch(e){w.fail('Dictionary unavailable.')}
+}
+
+/* ---------- Orchestration ---------- */
+const RUN={wx:loadWx,cr:loadCr,fx:loadFx,hn:loadHn,eq:loadEq,qt:loadQt,wd:loadWd};
+document.addEventListener('click',e=>{const r=e.target.closest('[data-r]');if(r)RUN[r.dataset.r]()});
+async function loadAll(){
+ await Promise.allSettled(Object.values(RUN).map(f=>f()));
+ $('#ts').textContent='Updated '+new Date().toLocaleTimeString();
+}
+$('#refreshAll').onclick=loadAll;
+renderClocks();
+if(!LS.get('city',null)&&navigator.geolocation){
+ navigator.geolocation.getCurrentPosition(p=>{city={name:'Your location',lat:+p.coords.latitude.toFixed(4),lon:+p.coords.longitude.toFixed(4)};LS.set('city',city);loadWx()},()=>{},{timeout:6000});
+}
+loadAll();
+</script></body></html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Infinite Board</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d12;font-family:Inter,system-ui,sans-serif;color:#e6e9ef;user-select:none;-webkit-user-select:none}
+#vp{position:fixed;inset:0;overflow:hidden;background-color:#0b0d12;background-image:radial-gradient(circle,#2e3648 1px,transparent 1.5px);background-size:24px 24px}
+#vp.pan{cursor:grabbing!important}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;width:1px;height:1px}
+#wires{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+#wires path{fill:none;stroke:#5b8cff;stroke-width:2.5}
+#wires path.hit{stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+#wires path.temp{stroke-dasharray:7 7;opacity:.75}
+#wires polygon{fill:#5b8cff}
+.card{position:absolute;background:#141821;border:1px solid #262c3a;border-radius:12px;box-shadow:0 10px 30px #0008;display:flex;flex-direction:column;overflow:hidden}
+.card.sel{border-color:#5b8cff;box-shadow:0 0 0 1px #5b8cff55,0 10px 30px #0008}
+.hd{height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;cursor:grab;border-bottom:1px solid #262c3a;flex-shrink:0;background:#1b2030}
+.tag{width:12px;height:12px;border-radius:50%;cursor:pointer;flex-shrink:0}
+.ttl{flex:1;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#8a93a6}
+.x{background:none;border:0;color:#7a8296;font-size:18px;cursor:pointer;padding:0 2px;line-height:1}
+.x:hover{color:#ff6b6b}
+.bd{flex:1;position:relative;min-height:0}
+textarea{position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:0;background:transparent;color:#e6e9ef;padding:10px;font:13px/1.5 ui-monospace,Menlo,monospace;user-select:text}
+.pv{position:absolute;inset:0;padding:10px;overflow:auto;font-size:14px;line-height:1.5;cursor:text;user-select:text}
+.pv code{background:#0009;padding:1px 5px;border-radius:4px;font-size:12px}
+.pv ul{margin:4px 0;padding-left:18px}
+.pv h3{margin:4px 0;font-size:16px}
+.rz{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 55%,#4a5266 55%)}
+.hdl{position:absolute;right:-9px;top:50%;margin-top:-9px;width:18px;height:18px;border-radius:50%;background:#5b8cff;border:3px solid #0b0d12;cursor:crosshair;z-index:5;box-shadow:0 0 10px #5b8cff88}
+.hdl:hover{transform:scale(1.2)}
+.pill{position:fixed;background:#141821cc;border:1px solid #262c3a;border-radius:12px;backdrop-filter:blur(6px);font-size:12px;color:#8a93a6}
+#hint{top:14px;left:50%;transform:translateX(-50%);padding:7px 14px;pointer-events:none;white-space:nowrap}
+#zb{left:14px;bottom:14px;padding:7px 12px;font-variant-numeric:tabular-nums;color:#cfd6e4;min-width:64px;text-align:center}
+#bar{bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:4px;padding:5px}
+#bar button{background:transparent;border:0;color:#cfd6e4;font:500 12px system-ui;padding:8px 12px;border-radius:8px;cursor:pointer}
+#bar button:hover{background:#262c3a}
+#bar .sep{width:1px;background:#262c3a;margin:4px 2px}
+@media(max-width:700px){#hint{display:none}}
+</style></head>
+<body>
+<div id="vp"><div id="world"><svg id="wires"></svg></div></div>
+<div id="hint" class="pill">Double-click to add · Middle / Space + drag to pan · Scroll to zoom · Drag the blue dot to connect</div>
+<div id="zb" class="pill">100%</div>
+<div id="bar" class="pill">
+ <button id="bCtr">Auto-Center</button><span class="sep"></span>
+ <button id="bJs">Export JSON</button><button id="bPng">Export PNG</button><span class="sep"></span>
+ <button id="bClr">Clear Board</button>
+</div>
+<script>
+const KEY='infinite-board-v1';
+const vp=document.getElementById('vp'),world=document.getElementById('world'),wires=document.getElementById('wires'),zb=document.getElementById('zb');
+const COLORS=[{n:'Yellow',v:'#facc15'},{n:'Cyan',v:'#22d3ee'},{n:'Pink',v:'#f472b6'},{n:'Mint',v:'#6ee7b7'}];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const isBg=t=>t===vp||t===world||t===wires;
+
+let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+let S=saved&&saved.cards?saved:{cards:[],links:[],v:null};
+S.links=S.links||[];
+S.v=S.v||{x:innerWidth/2-150,y:innerHeight/2-90,z:1};
+let V=S.v,els={},drag=null,spaceDown=false,zTop=1,sTimer=0;
+
+/* ---------- Markdown ---------- */
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function inl(s){return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\*([^*]+)\*/g,'<i>$1</i>')}
+function md(src){
+ if(!src.trim())return '<span style="opacity:.4">Click to write… (Markdown supported)</span>';
+ let out='',inList=false;
+ for(const line of src.split('\n')){
+  const li=line.match(/^\s*[-*] (.*)/),h=line.match(/^(#{1,3}) (.*)/);
+  if(li){if(!inList){out+='<ul>';inList=true}out+='<li>'+inl(li[1])+'</li>';continue}
+  if(inList){out+='</ul>';inList=false}
+  if(h)out+=`<h3>${inl(h[2])}</h3>`;
+  else out+=(line.trim()?inl(line):'')+'<br>';
+ }
+ if(inList)out+='</ul>';
+ return out;
+}
+
+/* ---------- Persistence ---------- */
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function scheduleSave(){clearTimeout(sTimer);sTimer=setTimeout(save,300)}
+
+/* ---------- View ---------- */
+function applyView(){
+ world.style.transform=`translate(${V.x}px,${V.y}px) scale(${V.z})`;
+ const g=24*V.z;vp.style.backgroundSize=`${g}px ${g}px`;vp.style.backgroundPosition=`${V.x}px ${V.y}px`;
+ zb.textContent=Math.round(V.z*100)+'%';
+}
+
+/* ---------- Cards ---------- */
+function placeEl(c){const el=els[c.id];el.style.left=c.x+'px';el.style.top=c.y+'px';el.style.width=c.w+'px';el.style.height=c.h+'px'}
+function select(el){document.querySelectorAll('.card.sel').forEach(n=>n.classList.remove('sel'));el.classList.add('sel')}
+function front(el){el.style.zIndex=++zTop;select(el)}
+function mkEl(c){
+ const el=document.createElement('div');el.className='card';el.dataset.id=c.id;
+ el.innerHTML='<div class="hd"><span class="tag"></span><span class="ttl"></span><button class="x" title="Delete">×</button></div><div class="bd"><textarea hidden></textarea><div class="pv"></div></div><div class="rz"></div><div class="hdl" title="Drag onto another card to connect"></div>';
+ const tag=el.querySelector('.tag'),ttl=el.querySelector('.ttl'),ta=el.querySelector('textarea'),pv=el.querySelector('.pv');
+ ta.value=c.t;pv.innerHTML=md(c.t);
+ const paint=()=>{const k=COLORS[c.c];tag.style.background=k.v;tag.style.boxShadow=`0 0 10px ${k.v}88`;ttl.textContent=k.n};
+ paint();
+ tag.onclick=e=>{e.stopPropagation();c.c=(c.c+1)%COLORS.length;paint();scheduleSave()};
+ pv.onclick=()=>{ta.hidden=false;pv.hidden=true;ta.focus()};
+ ta.onblur=()=>{ta.hidden=true;pv.hidden=false;pv.innerHTML=md(c.t)};
+ ta.oninput=()=>{c.t=ta.value;scheduleSave()};
+ el.querySelector('.x').onclick=e=>{e.stopPropagation();delCard(c.id)};
+ el.querySelector('.hd').addEventListener('pointerdown',e=>{
+  if(e.button!==0||e.target.closest('.x,.tag'))return;
+  e.preventDefault();front(el);drag={t:'card',c,sx:e.clientX,sy:e.clientY,ox:c.x,oy:c.y};
+ });
+ el.addEventListener('pointerdown',()=>front(el));
+ el.querySelector('.rz').addEventListener('pointerdown',e=>{
+  e.preventDefault();e.stopPropagation();front(el);
+  drag={t:'rz',c,sx:e.clientX,sy:e.clientY,ow:c.w,oh:c.h};
+ });
+ el.querySelector('.hdl').addEventListener('pointerdown',e=>{
+  e.preventDefault();e.stopPropagation();
+  drag={t:'link',from:c.id,x:(e.clientX-V.x)/V.z,y:(e.clientY-V.y)/V.z};drawWires();
+ });
+ world.appendChild(el);els[c.id]=el;placeEl(c);
+}
+function addCard(x,y,t='',c=0){
+ const card={id:uid(),x,y,w:260,h:180,c,t};
+ S.cards.push(card);mkEl(card);front(els[card.id]);save();return card;
+}
+function delCard(id){
+ S.cards=S.cards.filter(c=>c.id!==id);
+ S.links=S.links.filter(l=>l.a!==id&&l.b!==id);
+ els[id].remove();delete els[id];drawWires();save();
+}
+
+/* ---------- Wires ---------- */
+const anchor=c=>[c.x+c.w,c.y+c.h/2];
+const inAnchor=c=>[c.x,c.y+c.h/2];
+function bez(x1,y1,x2,y2){const d=Math.max(60,Math.abs(x2-x1)*.5);return`M${x1},${y1} C${x1+d},${y1} ${x2-d},${y2} ${x2},${y2}`}
+function drawWires(){
+ let h='<defs></defs>';
+ for(const l of S.links){
+  const a=S.cards.find(c=>c.id===l.a),b=S.cards.find(c=>c.id===l.b);if(!a||!b)continue;
+  const[x1,y1]=anchor(a),[x2,y2]=inAnchor(b),d=bez(x1,y1,x2,y2);
+  h+=`<path d="${d}"/><polygon points="${x2},${y2} ${x2-11},${y2-6} ${x2-11},${y2+6}"/><path class="hit" d="${d}" data-l="${l.a}|${l.b}"/>`;
+ }
+ if(drag&&drag.t==='link'){
+  const a=S.cards.find(c=>c.id===drag.from);
+  if(a){const[x1,y1]=anchor(a);h+=`<path class="temp" d="${bez(x1,y1,drag.x,drag.y)}"/>`}
+ }
+ wires.innerHTML=h;
+}
+wires.addEventListener('pointerdown',e=>{
+ const k=e.target.dataset&&e.target.dataset.l;if(!k)return;
+ const[a,b]=k.split('|');S.links=S.links.filter(l=>!(l.a===a&&l.b===b));
+ e.stopPropagation();drawWires();save();
+});
+
+/* ---------- Pan / zoom ---------- */
+vp.addEventListener('pointerdown',e=>{
+ if(e.button===1||(spaceDown&&e.button===0)||(e.button===0&&isBg(e.target))){
+  e.preventDefault();drag={t:'pan',sx:e.clientX,sy:e.clientY,ox:V.x,oy:V.y};vp.classList.add('pan');
+ }
+});
+vp.addEventListener('wheel',e=>{
+ e.preventDefault();
+ const nz=clamp(V.z*Math.exp(-e.deltaY*.0015),.2,3),r=nz/V.z;
+ V.x=e.clientX-(e.clientX-V.x)*r;V.y=e.clientY-(e.clientY-V.y)*r;V.z=nz;
+ applyView();scheduleSave();
+},{passive:false});
+vp.addEventListener('dblclick',e=>{
+ if(!isBg(e.target))return;
+ addCard((e.clientX-V.x)/V.z-130,(e.clientY-V.y)/V.z-20);
+});
+addEventListener('keydown',e=>{
+ if(e.code==='Space'&&e.target.tagName!=='TEXTAREA'&&e.target.tagName!=='BUTTON'){spaceDown=true;e.preventDefault();vp.style.cursor='grab'}
+});
+addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;vp.style.cursor=''}});
+
+/* ---------- Global drag ---------- */
+addEventListener('pointermove',e=>{
+ if(!drag)return;
+ const dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;
+ if(drag.t==='pan'){V.x=drag.ox+dx;V.y=drag.oy+dy;applyView()}
+ else if(drag.t==='card'){drag.c.x=drag.ox+dx/V.z;drag.c.y=drag.oy+dy/V.z;placeEl(drag.c);drawWires()}
+ else if(drag.t==='rz'){drag.c.w=Math.max(180,drag.ow+dx/V.z);drag.c.h=Math.max(120,drag.oh+dy/V.z);placeEl(drag.c);drawWires()}
+ else if(drag.t==='link'){drag.x=(e.clientX-V.x)/V.z;drag.y=(e.clientY-V.y)/V.z;drawWires()}
+});
+function endDrag(e){
+ if(!drag)return;
+ if(drag.t==='link'){
+  const tc=document.elementFromPoint(e.clientX,e.clientY)?.closest('.card');
+  if(tc){const to=tc.dataset.id;if(to!==drag.from&&!S.links.some(l=>l.a===drag.from&&l.b===to))S.links.push({a:drag.from,b:to})}
+ }
+ drag=null;vp.classList.remove('pan');drawWires();save();
+}
+addEventListener('pointerup',endDrag);
+addEventListener('pointercancel',endDrag);
+
+/* ---------- Toolbar ---------- */
+function bbox(p){
+ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+ for(const c of S.cards){x0=Math.min(x0,c.x);y0=Math.min(y0,c.y);x1=Math.max(x1,c.x+c.w);y1=Math.max(y1,c.y+c.h)}
+ return{x0:x0-p,y0:y0-p,x1:x1+p,y1:y1+p};
+}
+document.getElementById('bCtr').onclick=()=>{
+ if(!S.cards.length){V.x=innerWidth/2;V.y=innerHeight/2;V.z=1}
+ else{
+  const b=bbox(0),cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;
+  const z=clamp(Math.min((innerWidth-120)/(b.x1-b.x0),(innerHeight-140)/(b.y1-b.y0)),.2,1.2);
+  V.z=z;V.x=innerWidth/2-cx*z;V.y=innerHeight/2-cy*z;
+ }
+ applyView();save();
+};
+document.getElementById('bClr').onclick=()=>{
+ if(!S.cards.length||!confirm('Clear the entire board?'))return;
+ for(const id in els)els[id].remove();
+ els={};S.cards=[];S.links=[];drawWires();save();
+};
+document.getElementById('bJs').onclick=()=>{
+ const blob=new Blob([JSON.stringify({cards:S.cards,links:S.links,view:V},null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='board.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+function rr(q,x,y,w,h,r){q.beginPath();q.moveTo(x+r,y);q.arcTo(x+w,y,x+w,y+h,r);q.arcTo(x+w,y+h,x,y+h,r);q.arcTo(x,y+h,x,y,r);q.arcTo(x,y,x+w,y,r);q.closePath()}
+document.getElementById('bPng').onclick=()=>{
+ if(!S.cards.length){alert('Nothing to export yet.');return}
+ const b=bbox(40),sc=2,BW=b.x1-b.x0,BH=b.y1-b.y0;
+ const cv=document.createElement('canvas');cv.width=BW*sc;cv.height=BH*sc;
+ const q=cv.getContext('2d');q.setTransform(sc,0,0,sc,-b.x0*sc,-b.y0*sc);
+ q.fillStyle='#0b0d12';q.fillRect(b.x0,b.y0,BW,BH);
+ q.fillStyle='#2e3648';
+ for(let x=Math.floor(b.x0/24)*24;x<b.x1;x+=24)for(let y=Math.floor(b.y0/24)*24;y<b.y1;y+=24){q.beginPath();q.arc(x,y,1.2,0,6.283);q.fill()}
+ for(const l of S.links){
+  const a=S.cards.find(c=>c.id===l.a),c2=S.cards.find(c=>c.id===l.b);if(!a||!c2)continue;
+  const[x1,y1]=anchor(a),[x2,y2]=inAnchor(c2),d=Math.max(60,Math.abs(x2-x1)*.5);
+  q.strokeStyle='#5b8cff';q.lineWidth=2.5;q.beginPath();q.moveTo(x1,y1);q.bezierCurveTo(x1+d,y1,x2-d,y2,x2,y2);q.stroke();
+  q.fillStyle='#5b8cff';q.beginPath();q.moveTo(x2,y2);q.lineTo(x2-11,y2-6);q.lineTo(x2-11,y2+6);q.fill();
+ }
+ for(const c of S.cards){
+  rr(q,c.x,c.y,c.w,c.h,12);q.fillStyle='#141821';q.fill();q.strokeStyle='#262c3a';q.lineWidth=1;q.stroke();
+  q.save();rr(q,c.x,c.y,c.w,c.h,12);q.clip();
+  q.fillStyle='#1b2030';q.fillRect(c.x,c.y,c.w,32);
+  q.fillStyle=COLORS[c.c].v;q.beginPath();q.arc(c.x+18,c.y+16,6,0,6.283);q.fill();
+  q.fillStyle='#8a93a6';q.font='600 11px system-ui';q.fillText(COLORS[c.c].n.toUpperCase(),c.x+32,c.y+20);
+  q.fillStyle='#e6e9ef';q.font='13px system-ui';
+  let yy=c.y+52;
+  for(const para of c.t.replace(/[*_`#]/g,'').split('\n')){
+   let line='';
+   for(const w of para.split(' ')){
+    const test=line?line+' '+w:w;
+    if(q.measureText(test).width>c.w-24&&line){q.fillText(line,c.x+12,yy);yy+=18;line=w}else line=test;
+   }
+   q.fillText(line,c.x+12,yy);yy+=20;
+   if(yy>c.y+c.h)break;
+  }
+  q.restore();
+ }
+ const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='board.png';a.click();
+};
+
+/* ---------- Boot ---------- */
+S.cards.forEach(mkEl);
+if(!saved||!saved.cards)addCard(innerWidth/2-390,innerHeight/2-120,'**Welcome!** Double-click anywhere to add a note.\n\n- Markdown works: *italics*, **bold**, `code`\n- Drag the blue dot on a card onto another to connect them\n- Drag headers to move, corner to resize','0');
+zTop=S.cards.length+1;
+applyView();drawWires();
+</script></body></html>
